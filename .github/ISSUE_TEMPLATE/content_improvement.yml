@@ -1,0 +1,22 @@
+name: Content Improvement
+description: Suggest a clarification or expansion to existing content
+labels: ["content"]
+body:
+  - type: input
+    id: guide
+    attributes:
+      label: Guide or page
+      placeholder: "e.g. ML Basics For DevOps Engineers"
+    validations:
+      required: true
+  - type: input
+    id: section
+    attributes:
+      label: Section
+      placeholder: "e.g. 'Training Loop' section"
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggestion
+    validations:
+      required: true

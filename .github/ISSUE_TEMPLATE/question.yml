@@ -1,0 +1,15 @@
+name: Question
+description: Ask something about a guide or topic
+labels: ["question"]
+body:
+  - type: input
+    id: guide
+    attributes:
+      label: Related guide (if any)
+      placeholder: "e.g. Deploying with KServe"
+  - type: textarea
+    id: question
+    attributes:
+      label: Your question
+    validations:
+      required: true

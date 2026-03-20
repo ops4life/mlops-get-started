@@ -1,0 +1,33 @@
+name: Bug Report
+description: Something is broken or incorrect in a guide
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: "Thanks for taking the time to report a bug!"
+  - type: input
+    id: guide-url
+    attributes:
+      label: Guide URL
+      placeholder: "https://learnmlops.ops4life.com/guides/..."
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: "1. Go to...\n2. Notice that..."
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
