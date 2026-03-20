@@ -1,6 +1,6 @@
 # mlops-get-started
 
-Code snippets for [LearnMLOps](https://learnmlops.ops4life.com) guides — practical MLOps examples for DevOps engineers.
+Code snippets for [LearnMLOps](https://learnmlops.ops4life.com) guides — practical MLOps examples for DevOps engineers. Inspired by and adapted from [techiescamp/mlops-for-devops](https://github.com/techiescamp/mlops-for-devops).
 
 ## Structure
 
@@ -37,21 +37,4 @@ The full production MLOps project these notebooks are based on is available at [
 
 ## License
 
-The licenses below apply to the files in **this repository** (`mlops-get-started`) only.
-
-**Code** (all `.ipynb`, `.yaml`, `.sh`, and `.py` files) — Apache License 2.0
-
-> Copyright 2025 TechiesCamp / DevOpsCube (contact@devopscube.com)
->
-> Licensed under the Apache License, Version 2.0. You may obtain a copy at:
-> http://www.apache.org/licenses/LICENSE-2.0
-
-**Content** (README files, guides, documentation, and explanatory text) — All Rights Reserved
-
-> Copyright (c) 2025 TechiesCamp / DevOpsCube (contact@devopscube.com)
->
-> You may read and study this content for personal learning, and link to this repository. Brief excerpts (up to 50 words) may be quoted with clear attribution. Copying, republishing, creating derivative works, or using this content in any course or training material — whether free or paid — requires prior written consent.
->
-> Contact: contact@devopscube.com
-
-For the license terms of the upstream project, see [techiescamp/mlops-for-devops](https://github.com/techiescamp/mlops-for-devops).
+The notebooks and dataset in this repository are adapted from [techiescamp/mlops-for-devops](https://github.com/techiescamp/mlops-for-devops) and are distributed under the same [Apache License 2.0](http://www.apache.org/licenses/LICENSE-2.0) as the original. See the upstream repository for full license terms.
