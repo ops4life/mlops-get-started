@@ -37,7 +37,7 @@ The full production MLOps project these notebooks are based on is available at [
 
 ## License
 
-This repository uses a dual license:
+The licenses below apply to the files in **this repository** (`mlops-get-started`) only.
 
 **Code** (all `.ipynb`, `.yaml`, `.sh`, and `.py` files) — Apache License 2.0
 
@@ -53,3 +53,5 @@ This repository uses a dual license:
 > You may read and study this content for personal learning, and link to this repository. Brief excerpts (up to 50 words) may be quoted with clear attribution. Copying, republishing, creating derivative works, or using this content in any course or training material — whether free or paid — requires prior written consent.
 >
 > Contact: contact@devopscube.com
+
+For the license terms of the upstream project, see [techiescamp/mlops-for-devops](https://github.com/techiescamp/mlops-for-devops).
