@@ -1,0 +1,22 @@
+s3://your-ml-data-lake/
+├── raw/                    # Exact copy of source data, never modified
+│   ├── events/
+│   │   └── year=2024/month=01/day=15/events.parquet
+│   └── users/
+│       └── year=2024/month=01/day=15/users.parquet
+│
+├── validated/              # Raw data that passed validation checks
+│   └── events/
+│       └── year=2024/month=01/day=15/events.parquet
+│
+├── curated/                # Cleaned, joined, feature-engineered data
+│   └── training_datasets/
+│       └── v20240115/      # Dataset version (date-based)
+│           ├── train.parquet
+│           ├── val.parquet
+│           └── test.parquet
+│
+└── models/                 # Trained model artifacts (if not using MLflow)
+    └── churn_predictor/
+        └── v1.2.3/
+            └── model.pkl

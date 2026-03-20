@@ -1,0 +1,26 @@
+# Canary: 90% to v3 (current), 10% to v4 (new)
+apiVersion: "serving.kserve.io/v1beta1"
+kind: "InferenceService"
+metadata:
+  name: churn-predictor
+  namespace: ml-serving
+spec:
+  predictor:
+    # canaryTrafficPercent routes this much to the canary
+    canaryTrafficPercent: 10
+    sklearn:
+      storageUri: "s3://your-bucket/mlflow-artifacts/churn-predictor/v3/model"
+      resources:
+        requests:
+          cpu: "500m"
+          memory: "1Gi"
+
+  # The canary spec gets canaryTrafficPercent of traffic
+  predictor:
+    canary:
+      sklearn:
+        storageUri: "s3://your-bucket/mlflow-artifacts/churn-predictor/v4/model"
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "1Gi"

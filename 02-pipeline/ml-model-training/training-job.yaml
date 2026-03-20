@@ -1,0 +1,47 @@
+# k8s/training-job.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: churn-model-training-20240115
+  namespace: mlops
+  labels:
+    app: ml-training
+    model: churn-predictor
+spec:
+  ttlSecondsAfterFinished: 86400  # clean up after 24h
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: Never
+      serviceAccountName: ml-training-sa
+      containers:
+        - name: trainer
+          image: your-registry/ml-trainer:v1.2.3
+          command: ["python", "train.py"]
+          args:
+            - "--data-path=s3://your-bucket/curated/training_datasets/v20240115"
+            - "--mlflow-uri=http://mlflow.mlops.svc.cluster.local:5000"
+            - "--experiment-name=churn-prediction"
+            - "--model-name=churn-predictor"
+            - "--n-estimators=300"
+            - "--learning-rate=0.05"
+          resources:
+            requests:
+              cpu: "4"
+              memory: "16Gi"
+            limits:
+              cpu: "8"
+              memory: "32Gi"
+          env:
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: aws-credentials
+                  key: access-key-id
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: aws-credentials
+                  key: secret-access-key
+      nodeSelector:
+        workload-type: ml-training  # Schedule on dedicated ML nodes

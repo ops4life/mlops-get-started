@@ -1,0 +1,18 @@
+# Pod requesting 1 GPU
+spec:
+  containers:
+    - name: training
+      image: nvcr.io/nvidia/pytorch:24.01-py3
+      resources:
+        requests:
+          nvidia.com/gpu: 1    # Request 1 GPU
+          memory: "32Gi"
+          cpu: "8"
+        limits:
+          nvidia.com/gpu: 1    # Limits must equal requests for GPU
+          memory: "32Gi"
+          cpu: "16"
+      env:
+        - name: CUDA_VISIBLE_DEVICES
+          value: "0"    # Usually set automatically by the device plugin
+      command: ["python", "train_gpu.py", "--device=cuda"]

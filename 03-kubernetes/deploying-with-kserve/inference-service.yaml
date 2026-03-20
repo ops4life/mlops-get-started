@@ -1,0 +1,37 @@
+# inferenceservice-churn.yaml
+apiVersion: "serving.kserve.io/v1beta1"
+kind: "InferenceService"
+metadata:
+  name: churn-predictor
+  namespace: ml-serving
+  annotations:
+    # Require minimum 1 replica (disable scale-to-zero for low latency)
+    autoscaling.knative.dev/minScale: "1"
+    autoscaling.knative.dev/maxScale: "10"
+spec:
+  predictor:
+    # Use the sklearn serving runtime — automatically loads joblib/pickle models
+    sklearn:
+      storageUri: "s3://your-bucket/mlflow-artifacts/churn-predictor/v3/model"
+      # OR reference an MLflow registered model:
+      # storageUri: "mlflow-artifacts:/churn-predictor/3/artifacts/model"
+      resources:
+        requests:
+          cpu: "500m"
+          memory: "1Gi"
+        limits:
+          cpu: "2"
+          memory: "4Gi"
+      env:
+        - name: MLFLOW_TRACKING_URI
+          value: "http://mlflow.mlops.svc.cluster.local:5000"
+
+  # Optional: transformer for pre/post processing
+  transformer:
+    containers:
+      - name: transformer
+        image: your-registry/churn-transformer:v1.0.0
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "256Mi"

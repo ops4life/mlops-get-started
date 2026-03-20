@@ -1,0 +1,29 @@
+DAYS 1-30: Foundation
+  Week 1: Python ML basics (numpy, pandas, scikit-learn)
+           → Work through guides/ml-basics-for-devops
+  Week 2: MLflow — run tracking, model registry, artifact store
+           → Set up a local MLflow server, run 10 experiments
+  Week 3: DVC — data versioning, pipeline stages, remote storage
+           → Version a dataset, reproduce a training run from scratch
+  Week 4: Docker for ML — GPU Dockerfiles, CUDA base images
+           → Build a training container, run it locally
+
+DAYS 31-60: Pipelines
+  Week 5: Airflow basics — DAGs, operators, task dependencies
+           → Build a data ingestion DAG that runs daily
+  Week 6: Feature engineering and data quality
+           → Add Great Expectations validation to your pipeline
+  Week 7: Kubernetes for ML — resource quotas, GPU nodes, Jobs
+           → Deploy a training Job to a K8s cluster
+  Week 8: KServe basics — InferenceService, serving runtimes
+           → Deploy your trained model to KServe
+
+DAYS 61-90: Operations
+  Week 9:  Model monitoring — prediction drift, Evidently AI
+           → Set up a dashboard showing your model's health
+  Week 10: CI/CD for ML — automate training on data changes
+           → Wire GitHub Actions to trigger retraining
+  Week 11: Production hardening — canary deployments, rollbacks
+           → Practice a model rollback scenario
+  Week 12: End-to-end project
+           → Build a complete MLOps pipeline for a real problem

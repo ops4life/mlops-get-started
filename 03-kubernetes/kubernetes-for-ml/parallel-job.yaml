@@ -1,0 +1,20 @@
+# Parallel hyperparameter search: 10 trials, 3 at a time
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: hyperparam-search-$(date +%Y%m%d%H%M)
+  namespace: mlops
+spec:
+  completions: 10          # Run 10 total successful trials
+  parallelism: 3           # Up to 3 concurrently
+  backoffLimit: 5          # Retry up to 5 times total
+  ttlSecondsAfterFinished: 43200   # Clean up after 12h
+  activeDeadlineSeconds: 14400     # Kill if still running after 4h
+  template:
+    metadata:
+      labels:
+        app: ml-training
+        job-type: hyperparam-search
+    spec:
+      restartPolicy: Never  # Each pod attempt is independent
+      # ... (full pod spec as shown earlier)

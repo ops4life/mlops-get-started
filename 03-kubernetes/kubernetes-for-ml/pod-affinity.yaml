@@ -1,0 +1,29 @@
+# Pod spec with node affinity for GPU training
+spec:
+  affinity:
+    nodeAffinity:
+      # REQUIRED: must be scheduled on a GPU training node
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: workload-type
+                operator: In
+                values: ["gpu-training"]
+      # PREFERRED: try to use A100 nodes, but not required
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          preference:
+            matchExpressions:
+              - key: gpu-type
+                operator: In
+                values: ["a100"]
+
+    # Pod anti-affinity: don't co-locate two training jobs on same node
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 50
+          podAffinityTerm:
+            labelSelector:
+              matchLabels:
+                app: ml-training
+            topologyKey: kubernetes.io/hostname

@@ -1,0 +1,14 @@
+# Autoscaling configuration via annotations
+metadata:
+  annotations:
+    # Scale based on concurrent requests per pod
+    autoscaling.knative.dev/target: "100"          # 100 concurrent requests per pod
+    autoscaling.knative.dev/minScale: "1"           # Never scale below 1 (avoid cold starts)
+    autoscaling.knative.dev/maxScale: "20"          # Never exceed 20 pods
+    autoscaling.knative.dev/targetUtilizationPercentage: "70"
+    autoscaling.knative.dev/scaleToZeroPodRetentionPeriod: "30m"
+
+    # OR: use HPA for CPU-based scaling
+    autoscaling.knative.dev/class: "hpa.autoscaling.knative.dev"
+    autoscaling.knative.dev/metric: "cpu"
+    autoscaling.knative.dev/target: "60"  # Scale up when CPU > 60%

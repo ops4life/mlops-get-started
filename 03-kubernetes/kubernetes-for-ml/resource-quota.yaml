@@ -1,0 +1,35 @@
+# Namespace quota for the ml-training namespace
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: ml-training-quota
+  namespace: ml-training
+spec:
+  hard:
+    requests.cpu: "40"          # Max 40 CPU cores requested
+    requests.memory: "160Gi"    # Max 160 GB RAM requested
+    limits.cpu: "80"
+    limits.memory: "320Gi"
+    requests.nvidia.com/gpu: "8"   # Max 8 GPUs
+    limits.nvidia.com/gpu: "8"
+    count/jobs.batch: "20"         # Max 20 concurrent jobs
+---
+# Default resource limits for pods that don't specify them
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: ml-training-limits
+  namespace: ml-training
+spec:
+  limits:
+    - type: Container
+      default:        # Applied if container doesn't specify limits
+        cpu: "2"
+        memory: "8Gi"
+      defaultRequest: # Applied if container doesn't specify requests
+        cpu: "500m"
+        memory: "2Gi"
+      max:            # Container can't exceed these
+        cpu: "32"
+        memory: "128Gi"
+        nvidia.com/gpu: "4"

@@ -1,0 +1,45 @@
+# PVC for shared training dataset (NFS or EFS backend)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: training-data-pvc
+  namespace: mlops
+spec:
+  accessModes:
+    - ReadWriteMany   # Multiple pods can read simultaneously
+  storageClassName: efs-sc  # AWS EFS storage class
+  resources:
+    requests:
+      storage: 500Gi
+---
+# PVC for model artifacts (ReadWriteOnce for single writer)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: model-artifacts-pvc
+  namespace: mlops
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: gp3-encrypted
+  resources:
+    requests:
+      storage: 100Gi
+---
+# Training Job mounting the dataset PVC
+spec:
+  volumes:
+    - name: training-data
+      persistentVolumeClaim:
+        claimName: training-data-pvc
+    - name: model-output
+      persistentVolumeClaim:
+        claimName: model-artifacts-pvc
+  containers:
+    - name: trainer
+      volumeMounts:
+        - name: training-data
+          mountPath: /data/training
+          readOnly: true
+        - name: model-output
+          mountPath: /output/models
