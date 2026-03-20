@@ -33,7 +33,7 @@ cd mlops-get-started
 
 Each notebook corresponds to a code block in the LearnMLOps guides at [learnmlops.ops4life.com](https://learnmlops.ops4life.com). The pipeline notebooks (`02-pipeline/`) are runnable end-to-end in [Google Colab](https://colab.research.google.com) — each includes `!pip install` and dataset fetch cells.
 
-The full production MLOps project these notebooks are based on is available at [github.com/ops4life/mlops-for-devops](https://github.com/ops4life/mlops-for-devops).
+The full production MLOps project these notebooks are based on is available at [github.com/techiescamp/mlops-for-devops](https://github.com/techiescamp/mlops-for-devops).
 
 ## License
 
