@@ -6,7 +6,7 @@ Code snippets for [LearnMLOps](https://learnmlops.ops4life.com) guides — pract
 
 ```
 mlops-get-started/
-├── employee_attrition.csv         # Dataset used across pipeline notebooks
+├── datasets/HR-Employee-Attrition.csv  # Dataset used across pipeline notebooks
 ├── 01-foundation/
 │   ├── devops-to-mlops/           # 90-day learning plan
 │   └── ml-basics/                 # Python ML setup and first model
@@ -21,6 +21,10 @@ mlops-get-started/
 └── 04-operations/
     └── data-drift-model-decay/    # Drift detection, Evidently AI, DVC versioning, retraining
 ```
+
+## Dataset
+
+The pipeline notebooks use the [IBM HR Analytics Employee Attrition & Performance](https://www.kaggle.com/datasets/pavansubhasht/ibm-hr-analytics-attrition-dataset) dataset from Kaggle.
 
 ## Usage
 
