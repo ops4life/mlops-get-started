@@ -1,6 +1,6 @@
 # mlops-get-started
 
-Code snippets for [LearnMLOps](https://learnmlops.ops4life.com) guides — practical MLOps examples for DevOps engineers. Inspired by and adapted from [techiescamp/mlops-for-devops](https://github.com/techiescamp/mlops-for-devops).
+Code snippets for [LearnMLOps](https://learnmlops.ops4life.com) guides — practical MLOps examples for DevOps engineers.
 
 ## Structure
 
@@ -32,9 +32,3 @@ cd mlops-get-started
 ```
 
 Each notebook corresponds to a code block in the LearnMLOps guides at [learnmlops.ops4life.com](https://learnmlops.ops4life.com). The pipeline notebooks (`02-pipeline/`) are runnable end-to-end in [Google Colab](https://colab.research.google.com) — each includes `!pip install` and dataset fetch cells.
-
-The full production MLOps project these notebooks are based on is available at [github.com/techiescamp/mlops-for-devops](https://github.com/techiescamp/mlops-for-devops).
-
-## License
-
-The notebooks and dataset in this repository are adapted from [techiescamp/mlops-for-devops](https://github.com/techiescamp/mlops-for-devops) and are distributed under the same [Apache License 2.0](http://www.apache.org/licenses/LICENSE-2.0) as the original. See the upstream repository for full license terms.
