@@ -9,7 +9,7 @@ mlops-get-started/
 ├── datasets/HR-Employee-Attrition.csv  # Dataset used across pipeline notebooks
 ├── 01-foundation/
 │   ├── devops-to-mlops/           # 90-day learning plan
-│   └── ml-basics/                 # Python ML setup and first model
+│   └── ml-basics/                 # First model notebook
 ├── 02-pipeline/
 │   ├── dataset-pipeline/          # Ingestion, Pandera validation, Airflow DAGs, DVC
 │   ├── data-preparation/          # Feature engineering, preprocessing, splits

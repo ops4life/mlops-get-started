@@ -27,6 +27,7 @@ Open Jupyter, navigate to `starter/`, and run any notebook. MLflow and Airflow a
 ```bash
 git clone https://github.com/ops4life/mlops-get-started.git
 cd mlops-get-started
+cp .env.example .env
 docker compose -f docker-compose.local.yml up -d
 ```
 
