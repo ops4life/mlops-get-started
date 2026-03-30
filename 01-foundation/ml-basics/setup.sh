@@ -1,3 +1,4 @@
+#!/bin/bash
 # Set up a Python ML environment
 python3 -m venv mlenv
 source mlenv/bin/activate
