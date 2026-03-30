@@ -1,6 +1,5 @@
 networks:
   sandbox-net:
-    internal: true
 
 volumes:
   mlruns:
