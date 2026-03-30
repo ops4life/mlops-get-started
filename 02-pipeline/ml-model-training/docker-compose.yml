@@ -3,11 +3,12 @@ version: "3.8"
 services:
   mlflow:
     image: ghcr.io/mlflow/mlflow:v2.10.0
+    env_file: ../../.env
     ports:
       - "5000:5000"
     environment:
       MLFLOW_BACKEND_STORE_URI: postgresql://mlflow:${DB_PASSWORD}@postgres:5432/mlflow
-      MLFLOW_DEFAULT_ARTIFACT_ROOT: s3://your-bucket/mlflow-artifacts
+      MLFLOW_DEFAULT_ARTIFACT_ROOT: ${MLFLOW_DEFAULT_ARTIFACT_ROOT}
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
     command: >
@@ -15,4 +16,4 @@ services:
         --host 0.0.0.0
         --port 5000
         --backend-store-uri postgresql://mlflow:${DB_PASSWORD}@postgres:5432/mlflow
-        --default-artifact-root s3://your-bucket/mlflow-artifacts
+        --default-artifact-root ${MLFLOW_DEFAULT_ARTIFACT_ROOT}
