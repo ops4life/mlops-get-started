@@ -89,7 +89,23 @@ Orchestrates ML pipelines as DAGs (Directed Acyclic Graphs).
 
 Versions datasets and pipeline stages without storing large files in git.
 
-DVC is a CLI tool — no server required. Key commands:
+DVC is a CLI tool — no server required.
+
+Install:
+
+```bash
+pip install dvc
+
+# With S3 support
+pip install "dvc[s3]"
+
+# With GCS support
+pip install "dvc[gs]"
+```
+
+> DVC is already installed in both the online sandbox and the local Docker Compose environment.
+
+Key commands:
 
 ```bash
 # Initialize in a repo
