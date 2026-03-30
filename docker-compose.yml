@@ -1,0 +1,50 @@
+networks:
+  sandbox-net:
+    internal: true
+
+volumes:
+  mlruns:
+  airflow-data:
+
+services:
+  jupyter:
+    image: ops4life/learnmlops-sandbox:latest
+    container_name: learnmlops-jupyter
+    command: >
+      jupyter notebook --ip=0.0.0.0 --no-browser --allow-root
+      --NotebookApp.token=''
+      --NotebookApp.password=''
+      --NotebookApp.notebook_dir=/workspace
+    ports:
+      - "8888:8888"
+    volumes:
+      - .:/workspace
+    networks:
+      - sandbox-net
+
+  mlflow:
+    image: ops4life/learnmlops-sandbox:latest
+    container_name: learnmlops-mlflow
+    command: mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri /mlruns
+    ports:
+      - "5000:5000"
+    volumes:
+      - mlruns:/mlruns
+    networks:
+      - sandbox-net
+
+  airflow:
+    image: ops4life/learnmlops-sandbox:latest
+    container_name: learnmlops-airflow
+    command: bash -c "rm -f /airflow/airflow-webserver.pid && airflow standalone"
+    environment:
+      - AIRFLOW_HOME=/airflow
+      - AIRFLOW__CORE__LOAD_EXAMPLES=false
+      - AIRFLOW__CORE__DAGS_FOLDER=/workspace/dags
+    ports:
+      - "8080:8080"
+    volumes:
+      - airflow-data:/airflow
+      - ./02-pipeline:/workspace/dags
+    networks:
+      - sandbox-net

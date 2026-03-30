@@ -26,6 +26,16 @@ mlops-get-started/
 
 The pipeline notebooks use the [IBM HR Analytics Employee Attrition & Performance](https://www.kaggle.com/datasets/pavansubhasht/ibm-hr-analytics-attrition-dataset) dataset from Kaggle.
 
+## Setup
+
+→ [SETUP.md](./SETUP.md) — use the online sandbox or run locally with Docker Compose
+
+| Tool | Online sandbox | Local |
+|------|---------------|-------|
+| Jupyter | https://sandbox.learnmlops.ops4life.com | http://localhost:8888 |
+| MLflow | https://mlflow.learnmlops.ops4life.com | http://localhost:5000 |
+| Airflow | https://airflow.learnmlops.ops4life.com | http://localhost:8080 |
+
 ## Usage
 
 Clone and explore:
