@@ -9,7 +9,7 @@ spec:
     # canaryTrafficPercent routes this much to the canary
     canaryTrafficPercent: 10
     sklearn:
-      storageUri: "s3://your-bucket/mlflow-artifacts/churn-predictor/v3/model"
+      storageUri: "s3://mlflow/artifacts/churn-predictor/v3/model"
       resources:
         requests:
           cpu: "500m"
@@ -19,7 +19,7 @@ spec:
   predictor:
     canary:
       sklearn:
-        storageUri: "s3://your-bucket/mlflow-artifacts/churn-predictor/v4/model"
+        storageUri: "s3://mlflow/artifacts/churn-predictor/v4/model"
         resources:
           requests:
             cpu: "500m"

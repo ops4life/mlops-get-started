@@ -12,7 +12,7 @@ spec:
   predictor:
     # Use the sklearn serving runtime — automatically loads joblib/pickle models
     sklearn:
-      storageUri: "s3://your-bucket/mlflow-artifacts/churn-predictor/v3/model"
+      storageUri: "s3://mlflow/artifacts/churn-predictor/v3/model"
       # OR reference an MLflow registered model:
       # storageUri: "mlflow-artifacts:/churn-predictor/3/artifacts/model"
       resources:

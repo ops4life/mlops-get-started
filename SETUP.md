@@ -8,11 +8,11 @@ Two ways to use the tools in this repo — pick whichever fits your situation.
 
 The easiest way to get started. Everything is pre-installed and the starter notebooks from this repo are already loaded.
 
-| Tool | URL |
-|------|-----|
-| Jupyter Notebook | https://sandbox.learnmlops.ops4life.com |
-| MLflow UI | https://mlflow.learnmlops.ops4life.com |
-| Airflow UI | https://airflow.learnmlops.ops4life.com |
+| Tool             | URL                                       |
+| ---------------- | ----------------------------------------- |
+| Jupyter Notebook | <https://sandbox.learnmlops.ops4life.com> |
+| MLflow UI        | <https://mlflow.learnmlops.ops4life.com>  |
+| Airflow UI       | <https://airflow.learnmlops.ops4life.com> |
 
 Open Jupyter, navigate to `starter/`, and run any notebook. MLflow and Airflow are already running and connected.
 
@@ -31,11 +31,11 @@ cp .env.example .env
 docker compose -f docker-compose.local.yml up -d
 ```
 
-| Tool | URL |
-|------|-----|
-| Jupyter Notebook | http://localhost:8888 |
-| MLflow UI | http://localhost:5000 |
-| Airflow UI | http://localhost:8080 |
+| Tool             | URL                     |
+| ---------------- | ----------------------- |
+| Jupyter Notebook | <http://localhost:8888> |
+| MLflow UI        | <http://localhost:5000> |
+| Airflow UI       | <http://localhost:8080> |
 
 Stop everything:
 
@@ -66,6 +66,7 @@ Tracks experiments: parameters, metrics, and model artifacts across training run
 - Locally, run data is stored in a `mlruns/` Docker volume
 
 Key concepts:
+
 - **Experiment** — a named group of runs (e.g. `employee-attrition`)
 - **Run** — one training execution with logged params and metrics
 - **Model Registry** — promotes a run's model artifact to `Staging` or `Production`
@@ -77,11 +78,14 @@ Orchestrates ML pipelines as DAGs (Directed Acyclic Graphs).
 - Runs in standalone mode: scheduler, webserver, and a single worker in one process
 - DAG files placed in `02-pipeline/` are auto-discovered every 30 seconds
 - Log in to the UI with the credentials printed during startup:
+
   ```bash
   docker compose logs airflow | grep "standalone_admin_password"
   # or check: docker exec learnmlops-airflow cat /airflow/standalone_admin_password.txt
   ```
+
 - Trigger a DAG manually from the UI or via CLI:
+
   ```bash
   docker exec learnmlops-airflow airflow dags trigger <dag_id>
   ```
@@ -118,8 +122,9 @@ dvc add datasets/HR-Employee-Attrition.csv
 # Define pipeline stages and run them
 dvc repro
 
-# Push data to a remote (S3, GCS, SSH, etc.)
-dvc remote add -d myremote s3://your-bucket/dvc-cache
+# Push data to MinIO (S3-compatible)
+dvc remote add -d myremote s3://dvc/cache
+dvc remote modify myremote endpointurl https://s3.ops4life.com
 dvc push
 
 # Reproduce the exact dataset/model from a past git commit

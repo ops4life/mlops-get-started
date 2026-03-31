@@ -8,7 +8,7 @@ metadata:
     app: ml-training
     model: churn-predictor
 spec:
-  ttlSecondsAfterFinished: 86400  # clean up after 24h
+  ttlSecondsAfterFinished: 86400 # clean up after 24h
   backoffLimit: 2
   template:
     spec:
@@ -19,7 +19,7 @@ spec:
           image: your-registry/ml-trainer:v1.2.3
           command: ["python", "train.py"]
           args:
-            - "--data-path=s3://your-bucket/curated/training_datasets/v20240115"
+            - "--data-path=s3://dvc/curated/training_datasets/v20240115"
             - "--mlflow-uri=http://mlflow.mlops.svc.cluster.local:5000"
             - "--experiment-name=churn-prediction"
             - "--model-name=churn-predictor"
@@ -36,12 +36,14 @@ spec:
             - name: AWS_ACCESS_KEY_ID
               valueFrom:
                 secretKeyRef:
-                  name: aws-credentials
-                  key: access-key-id
+                  name: minio-credentials
+                  key: access-key
             - name: AWS_SECRET_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
-                  name: aws-credentials
-                  key: secret-access-key
+                  name: minio-credentials
+                  key: secret-key
+            - name: MLFLOW_S3_ENDPOINT_URL
+              value: "https://s3.ops4life.com"
       nodeSelector:
-        workload-type: ml-training  # Schedule on dedicated ML nodes
+        workload-type: ml-training # Schedule on dedicated ML nodes

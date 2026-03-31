@@ -5,11 +5,11 @@ dvc init
 git add .dvc
 git commit -m "chore: initialize DVC"
 
-# Configure S3 as remote storage
-dvc remote add -d myremote s3://your-ml-data-lake/dvc-cache
-dvc remote modify myremote region us-east-1
+# Configure MinIO as remote storage (S3-compatible)
+dvc remote add -d myremote s3://dvc/cache
+dvc remote modify myremote endpointurl https://s3.ops4life.com
 git add .dvc/config
-git commit -m "chore: configure DVC S3 remote"
+git commit -m "chore: configure DVC MinIO remote"
 
 # Track a dataset directory
 dvc add data/raw/events/
