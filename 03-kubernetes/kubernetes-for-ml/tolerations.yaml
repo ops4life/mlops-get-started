@@ -1,17 +1,42 @@
-# Pod must have this toleration to land on tainted GPU nodes
+# tolerations.yaml — Pod spec snippet: tolerate GPU node taints
+#
+# WHY TOLERATIONS ARE NEEDED:
+# After taints.sh applies "dedicated=gpu-training:NoSchedule" to GPU nodes,
+# any pod WITHOUT a matching toleration will be rejected by the scheduler.
+# A toleration is the pod's "permission slip" to be scheduled on a tainted node.
+#
+# IMPORTANT: A toleration alone is NOT enough to guarantee GPU placement.
+# It only removes the barrier — it doesn't pull the pod TO the GPU node.
+# You also need a nodeAffinity rule (see pod-affinity.yaml) to actively
+# require or prefer the GPU node. The two work together:
+#   toleration  = "I am allowed on this node"
+#   nodeAffinity = "I want to be on this node"
+
 spec:
   tolerations:
+    # Match the taint applied in taints.sh exactly: key, value, and effect must align.
+    # key:      must match the taint key ("dedicated")
+    # operator: Equal means value must also match; Exists means any value is accepted
+    # value:    must match the taint value ("gpu-training")
+    # effect:   must match the taint effect (NoSchedule); omitting effect tolerates all effects
     - key: "dedicated"
       operator: "Equal"
       value: "gpu-training"
       effect: "NoSchedule"
 
-  # Combine with node affinity to both require AND be allowed on GPU nodes
+  # nodeAffinity: actively direct the pod to the GPU node.
+  # Without this, the pod is allowed on GPU nodes but the scheduler may still
+  # place it on a general node that has no taint.
   affinity:
     nodeAffinity:
+      # requiredDuringSchedulingIgnoredDuringExecution = HARD constraint.
+      # The pod will stay in Pending state until a matching node is available.
+      # "IgnoredDuringExecution" = if the node's labels change after scheduling,
+      # the running pod is NOT evicted (only new scheduling decisions are affected).
       requiredDuringSchedulingIgnoredDuringExecution:
         nodeSelectorTerms:
           - matchExpressions:
+              # This label is set by node-labels.sh on GPU nodes.
               - key: workload-type
                 operator: In
                 values: ["gpu-training"]

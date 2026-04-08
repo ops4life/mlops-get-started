@@ -1,4 +1,28 @@
+# storage.yaml — PersistentVolumeClaims for ML training data and model artifacts
+#
+# ACCESS MODE QUICK REFERENCE:
+#   ReadWriteOnce (RWO) — one node can mount read-write at a time.
+#                          Standard block storage (AWS EBS, GCP PD, Azure Disk).
+#                          Fine for a single training job writing model files.
+#
+#   ReadWriteMany (RWX) — multiple nodes can mount read-write simultaneously.
+#                          Requires a networked filesystem (NFS, AWS EFS, Azure Files).
+#                          Required when parallel Job pods on different nodes all
+#                          need to read the same dataset.
+#
+#   ReadOnlyMany  (ROX) — multiple nodes can mount read-only simultaneously.
+#                          Less common; RWX with readOnly: true on the volumeMount
+#                          is usually simpler.
+#
+# ML STORAGE PATTERN:
+#   Training data  → RWX  (many parallel workers read the same raw dataset)
+#   Model artifacts → RWO (only one trainer writes the output model files)
+
+---
 # PVC for shared training dataset (NFS or EFS backend)
+# RWX is essential here because parallel-job.yaml runs multiple pods simultaneously
+# on different nodes — all of them need to read /data/training at the same time.
+# EBS (gp2/gp3) does NOT support RWX; you must use a networked filesystem.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -6,13 +30,17 @@ metadata:
   namespace: mlops
 spec:
   accessModes:
-    - ReadWriteMany   # Multiple pods can read simultaneously
-  storageClassName: efs-sc  # AWS EFS storage class
+    - ReadWriteMany   # Multiple pods on different nodes can read concurrently
+  storageClassName: efs-sc  # AWS EFS CSI driver storage class — supports RWX
   resources:
     requests:
-      storage: 500Gi
+      storage: 500Gi  # Reserve 500 GB; EFS is elastic so this is a soft ceiling
+
 ---
-# PVC for model artifacts (ReadWriteOnce for single writer)
+# PVC for model artifacts — only one trainer writes output at a time.
+# RWO on gp3 (NVMe-backed SSD) gives fast sequential write throughput for
+# large model checkpoint files. Using gp3-encrypted enforces encryption at rest
+# which is typically a compliance requirement for production ML systems.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -20,26 +48,36 @@ metadata:
   namespace: mlops
 spec:
   accessModes:
-    - ReadWriteOnce
-  storageClassName: gp3-encrypted
+    - ReadWriteOnce   # Single writer — the training pod
+  storageClassName: gp3-encrypted  # AWS EBS gp3, encrypted at rest
   resources:
     requests:
-      storage: 100Gi
+      storage: 100Gi  # Model checkpoints + final artifacts; adjust per model size
+
 ---
-# Training Job mounting the dataset PVC
+# Example: how a training Job mounts both PVCs.
+# This is a partial pod spec — embed it inside a Job template (see training-job.yaml).
 spec:
   volumes:
+    # Volume name is a local alias used in volumeMounts below.
     - name: training-data
       persistentVolumeClaim:
-        claimName: training-data-pvc
+        claimName: training-data-pvc   # Must match metadata.name above
     - name: model-output
       persistentVolumeClaim:
         claimName: model-artifacts-pvc
+
   containers:
     - name: trainer
       volumeMounts:
+        # Mount the dataset as read-only — the training process should never
+        # modify raw data. readOnly: true enforces this at the OS level and
+        # is a good safety net against accidental overwrites.
         - name: training-data
           mountPath: /data/training
           readOnly: true
+
+        # Model output mount is read-write so the trainer can save checkpoints
+        # and the final model artifact to /output/models.
         - name: model-output
           mountPath: /output/models

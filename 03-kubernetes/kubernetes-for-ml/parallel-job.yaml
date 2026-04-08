@@ -1,20 +1,54 @@
-# Parallel hyperparameter search: 10 trials, 3 at a time
+# parallel-job.yaml — Kubernetes Job for parallel hyperparameter search
+#
+# HOW PARALLEL JOBS WORK:
+# A Kubernetes Job tracks pod completions, not pod runs. Setting completions > 1
+# means "run pods until N of them finish successfully." Setting parallelism
+# controls how many pods run at the same time.
+#
+# For hyperparameter search, each pod independently picks a random config
+# (or gets assigned one via JOB_COMPLETION_INDEX), trains to completion, and
+# logs results to MLflow. The Job succeeds when all 10 trials finish.
+#
+# MATH EXAMPLE (completions=10, parallelism=3):
+#   Batch 1: pods 1, 2, 3 run → all succeed → 3/10 done
+#   Batch 2: pods 4, 5, 6 run → pod 5 fails → 2/10 done, 1 retry used
+#   Batch 3: pods 7, 8, 9 run → all succeed → 7/10 done
+#   Batch 4: pods 10, 11 run  → 10 successes reached → Job complete
+#
+# CHOOSING VALUES:
+#   completions  — how many successful trials you want (more = better coverage)
+#   parallelism  — limited by available node count × GPUs per node
+#   backoffLimit — shared retry budget across ALL pods; set high enough to
+#                  tolerate transient failures (node preemption, OOM) but low
+#                  enough to catch infinite-loop bugs quickly
+
 apiVersion: batch/v1
 kind: Job
 metadata:
+  # Timestamp the name so re-runs don't collide with previous Job objects.
+  # In CI/CD pipelines you'd substitute a commit SHA or run ID instead.
   name: hyperparam-search-$(date +%Y%m%d%H%M)
   namespace: mlops
 spec:
-  completions: 10          # Run 10 total successful trials
-  parallelism: 3           # Up to 3 concurrently
-  backoffLimit: 5          # Retry up to 5 times total
-  ttlSecondsAfterFinished: 43200   # Clean up after 12h
-  activeDeadlineSeconds: 14400     # Kill if still running after 4h
+  completions: 10          # Total number of SUCCESSFUL pod completions required
+  parallelism: 3           # Maximum pods running simultaneously; tune to node capacity
+  backoffLimit: 5          # Total retries allowed across all pods before Job fails.
+                           # Set to 5 so 1-2 node preemptions don't abort the whole search.
+  ttlSecondsAfterFinished: 43200   # Auto-delete the Job 12h after completion.
+                                   # Keeps the namespace clean; logs are in MLflow anyway.
+  activeDeadlineSeconds: 14400     # Hard timeout: kill the entire Job after 4h.
+                                   # Prevents runaway jobs from consuming resources
+                                   # if training enters an infinite loop or hangs on I/O.
   template:
     metadata:
       labels:
         app: ml-training
-        job-type: hyperparam-search
+        job-type: hyperparam-search   # Used by podAntiAffinity in pod-affinity.yaml
+                                      # to spread trial pods across nodes.
     spec:
-      restartPolicy: Never  # Each pod attempt is independent
-      # ... (full pod spec as shown earlier)
+      # Never = do NOT restart a failed pod in-place; instead let the Job controller
+      # create a fresh pod for the retry. This ensures each trial starts clean
+      # (no stale in-memory state from a previous failed attempt).
+      restartPolicy: Never
+      # ... embed full container spec here (image, resources, env, volumeMounts)
+      # See training-job.yaml for a complete example.

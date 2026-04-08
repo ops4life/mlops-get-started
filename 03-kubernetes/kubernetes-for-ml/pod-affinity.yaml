@@ -1,29 +1,62 @@
-# Pod spec with node affinity for GPU training
+# pod-affinity.yaml — Node affinity and pod anti-affinity for ML training pods
+#
+# TWO SCHEDULING PROBLEMS THIS SOLVES:
+#
+# 1. NODE AFFINITY — "which nodes can/should this pod land on?"
+#    Training jobs need specific hardware. Without affinity, the scheduler might
+#    place a GPU training job on a small general-purpose node with no GPU,
+#    causing an immediate crash or an hours-long CPU fallback.
+#
+# 2. POD ANTI-AFFINITY — "how do pods of the same type spread across nodes?"
+#    If two heavy training jobs land on the same node they compete for memory,
+#    CPU cache, and disk I/O. Anti-affinity spreads them out for better throughput.
+#
+# REQUIRED vs PREFERRED:
+#   required* — HARD constraint. Pod stays in Pending until a matching node is
+#               available. Use when hardware is non-negotiable (e.g., needs GPU).
+#   preferred* — SOFT constraint. Scheduler tries to satisfy it but won't block
+#               scheduling. Use for optimization hints (e.g., prefer A100 over V100).
+
 spec:
   affinity:
     nodeAffinity:
-      # REQUIRED: must be scheduled on a GPU training node
+      # HARD: this pod MUST land on a node labeled workload-type=gpu-training.
+      # If no such node is available (all busy or none exist), the pod stays
+      # Pending until one becomes free. Label set by node-labels.sh.
       requiredDuringSchedulingIgnoredDuringExecution:
         nodeSelectorTerms:
           - matchExpressions:
               - key: workload-type
                 operator: In
                 values: ["gpu-training"]
-      # PREFERRED: try to use A100 nodes, but not required
+
+      # SOFT: among eligible GPU nodes, prefer A100 over other GPU types.
+      # weight: 100 = highest preference; range 1-100.
+      # If no A100 nodes are free, the scheduler falls back to any gpu-training node.
+      # Use this when you have a mixed GPU fleet and want to route large models
+      # to the most powerful hardware without hard-blocking on availability.
       preferredDuringSchedulingIgnoredDuringExecution:
         - weight: 100
           preference:
             matchExpressions:
               - key: gpu-type
                 operator: In
-                values: ["a100"]
+                values: ["a100"]   # Label set by node-labels.sh on A100 nodes
 
-    # Pod anti-affinity: don't co-locate two training jobs on same node
+    # POD ANTI-AFFINITY: spread training jobs across nodes.
+    # "Don't place this pod on the same node as another pod with app=ml-training."
+    # topologyKey: kubernetes.io/hostname means "same node" (as opposed to same
+    # availability zone or same rack). This prevents two memory-hungry jobs
+    # from fighting over the same node's RAM and degrading both.
     podAntiAffinity:
+      # SOFT: prefer separate nodes but allow co-location if no alternative exists.
+      # Using preferred here (not required) so that a small cluster with few GPU
+      # nodes doesn't block scheduling entirely when all nodes already have a job.
       preferredDuringSchedulingIgnoredDuringExecution:
-        - weight: 50
+        - weight: 50   # Lower weight than GPU preference — hardware matters more
+                       # than spreading; only avoid co-location when we have a choice.
           podAffinityTerm:
             labelSelector:
               matchLabels:
-                app: ml-training
-            topologyKey: kubernetes.io/hostname
+                app: ml-training   # Matches the label on pods from parallel-job.yaml
+            topologyKey: kubernetes.io/hostname   # "same node" scope

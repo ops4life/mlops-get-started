@@ -1,37 +1,80 @@
-# inferenceservice-churn.yaml
+# inference-service.yaml — KServe InferenceService for sklearn churn prediction model
+#
+# WHAT IS AN INFERENCESERVICE?
+# KServe's InferenceService is a Custom Resource that describes a model serving
+# deployment. KServe handles the container, health checks, autoscaling, and
+# the HTTP endpoint — you only need to specify where the model lives and what
+# resources it needs.
+#
+# ARCHITECTURE:
+#   Client → Istio Ingress → KServe → [Transformer (optional)] → Predictor
+#
+# The predictor is the model server. The transformer is a sidecar that runs
+# custom pre/post-processing before and after the predictor. Use a transformer
+# when your model expects a different input format than what clients send
+# (e.g., converting JSON field names to a numpy array in the right order).
+
 apiVersion: "serving.kserve.io/v1beta1"
 kind: "InferenceService"
 metadata:
   name: churn-predictor
   namespace: ml-serving
   annotations:
-    # Require minimum 1 replica (disable scale-to-zero for low latency)
+    # minScale: "1" disables scale-to-zero. By default Knative will scale the
+    # predictor down to 0 replicas after idle time to save resources. For
+    # production models with SLA requirements, keep at least 1 replica alive
+    # to avoid cold-start latency (~30-60s) on the first request after idle.
     autoscaling.knative.dev/minScale: "1"
+
+    # maxScale caps the number of replicas during traffic spikes.
+    # Set this based on available node capacity and budget.
     autoscaling.knative.dev/maxScale: "10"
+
 spec:
   predictor:
-    # Use the sklearn serving runtime — automatically loads joblib/pickle models
+    # sklearn runtime: KServe automatically loads a scikit-learn model saved
+    # with joblib or pickle from the storageUri path. No custom serving code needed.
+    # The runtime exposes a /v2/models/{name}/infer endpoint (Open Inference Protocol).
     sklearn:
+      # storageUri: where to download the model artifact from.
+      # Option 1 — S3/MinIO path: "s3://bucket/path/to/model"
+      #   KServe downloads the model files at startup using AWS credentials
+      #   from the pod's environment (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY).
       storageUri: "s3://mlflow/artifacts/churn-predictor/v3/model"
-      # OR reference an MLflow registered model:
+
+      # Option 2 — MLflow model URI: reference by MLflow registry name + version.
+      # KServe will call the MLflow tracking server to resolve the artifact path.
       # storageUri: "mlflow-artifacts:/churn-predictor/3/artifacts/model"
+
       resources:
         requests:
-          cpu: "500m"
-          memory: "1Gi"
+          cpu: "500m"    # 0.5 cores; sklearn inference is single-threaded and
+                         # CPU-light for tree-based and linear models.
+          memory: "1Gi"  # Must be larger than the model's in-memory size.
+                         # Run model.predict() locally and check RSS to size this.
         limits:
-          cpu: "2"
-          memory: "4Gi"
+          cpu: "2"       # Allow bursting to 2 cores during batch inference spikes.
+          memory: "4Gi"  # Hard cap; pod is OOM-killed if exceeded. Set 4× the model size.
+
       env:
+        # Tell the serving container where to reach the MLflow tracking server.
+        # Used when the sklearn model artifact references MLflow metadata at load time.
         - name: MLFLOW_TRACKING_URI
           value: "http://mlflow.mlops.svc.cluster.local:5000"
+          # Format: http://<service-name>.<namespace>.svc.cluster.local:<port>
+          # This uses Kubernetes DNS — works only inside the cluster.
 
-  # Optional: transformer for pre/post processing
+  # OPTIONAL transformer: runs alongside the predictor for pre/post-processing.
+  # Use when you need to:
+  #   - Rename or reorder input fields before they reach the predictor
+  #   - Apply feature engineering that wasn't baked into the sklearn Pipeline
+  #   - Post-process raw probabilities into business-friendly labels
+  # If your sklearn Pipeline already handles all preprocessing, omit this section.
   transformer:
     containers:
       - name: transformer
         image: your-registry/churn-transformer:v1.0.0
         resources:
           requests:
-            cpu: "100m"
-            memory: "256Mi"
+            cpu: "100m"    # Transformers are usually lightweight (JSON parsing,
+            memory: "256Mi" # field mapping) — much smaller than the predictor.

@@ -1,4 +1,30 @@
-# Namespace quota for the ml-training namespace
+# resource-quota.yaml — Namespace-level resource caps for ML training workloads
+#
+# WHY RESOURCE QUOTAS MATTER FOR ML:
+# Training jobs are resource-heavy by design. Without quotas, a misconfigured
+# job (e.g., requesting 1000Gi RAM) can starve the entire cluster. Quotas act
+# as a hard ceiling per namespace so one team can't monopolize shared GPU nodes.
+#
+# REQUESTS vs LIMITS (Kubernetes guarantee model):
+#   requests — minimum guaranteed resources. The scheduler uses this to decide
+#              which node has enough capacity. A pod is only placed on a node
+#              that can satisfy all its requests.
+#   limits   — maximum resources a container can use. If a container exceeds its
+#              memory limit it is OOM-killed. CPU is throttled (not killed).
+#
+# Setting limits.cpu = 2× requests.cpu gives bursting headroom:
+# during peak training, pods can briefly use extra CPU without being throttled,
+# but the cluster is not over-committed beyond the limits ceiling.
+#
+# GPU RULE — requests must equal limits for nvidia.com/gpu:
+# GPUs are not shared resources in Kubernetes (unlike CPU). A pod gets exclusive
+# access to a physical GPU. Because you can't partially allocate a GPU, the
+# scheduler requires requests == limits to avoid ambiguity. Setting them to
+# different values causes a scheduling error.
+
+---
+# ResourceQuota: enforced at namespace admission time.
+# Any pod creation that would push the namespace over a hard limit is REJECTED.
 apiVersion: v1
 kind: ResourceQuota
 metadata:
@@ -6,15 +32,28 @@ metadata:
   namespace: ml-training
 spec:
   hard:
-    requests.cpu: "40"          # Max 40 CPU cores requested
-    requests.memory: "160Gi"    # Max 160 GB RAM requested
-    limits.cpu: "80"
-    limits.memory: "320Gi"
-    requests.nvidia.com/gpu: "8"   # Max 8 GPUs
+    # CPU: allow pods to request up to 40 cores total in this namespace.
+    # With limits.cpu=80 (2×), pods can burst to 80 but only 40 are guaranteed.
+    requests.cpu: "40"
+    requests.memory: "160Gi"   # 160 GB guaranteed RAM across all pods
+    limits.cpu: "80"           # Hard ceiling: no pod can be scheduled if total
+    limits.memory: "320Gi"     # limits would exceed this after admission.
+
+    # GPU quota: must match both requests AND limits (they must be equal per pod).
+    # 8 GPUs total means at most 8 single-GPU training jobs at once, or 1 job
+    # requesting all 8 for multi-GPU distributed training.
+    requests.nvidia.com/gpu: "8"
     limits.nvidia.com/gpu: "8"
-    count/jobs.batch: "20"         # Max 20 concurrent jobs
+
+    # Prevent job sprawl: no more than 20 batch Jobs in the namespace at once.
+    # Old completed Jobs should be cleaned up via ttlSecondsAfterFinished.
+    count/jobs.batch: "20"
+
 ---
-# Default resource limits for pods that don't specify them
+# LimitRange: sets DEFAULT and MAX resource specs for containers that omit them.
+# Without this, a container with no resource spec gets unlimited resources and
+# bypasses the ResourceQuota (because quota only counts declared values).
+# LimitRange closes that loophole by injecting defaults at admission time.
 apiVersion: v1
 kind: LimitRange
 metadata:
@@ -23,13 +62,25 @@ metadata:
 spec:
   limits:
     - type: Container
-      default:        # Applied if container doesn't specify limits
+      # default: applied as limits when a container omits limits entirely.
+      # These are conservative — individual Jobs should override with higher
+      # values for actual training workloads.
+      default:
         cpu: "2"
         memory: "8Gi"
-      defaultRequest: # Applied if container doesn't specify requests
+
+      # defaultRequest: applied as requests when a container omits requests.
+      # 500m CPU = 0.5 cores; suitable for lightweight init containers or
+      # data-prep jobs that don't do heavy compute.
+      defaultRequest:
         cpu: "500m"
         memory: "2Gi"
-      max:            # Container can't exceed these
+
+      # max: a container cannot request or limit more than these values,
+      # even if it explicitly tries to. Prevents a single container from
+      # consuming the entire quota budget.
+      max:
         cpu: "32"
         memory: "128Gi"
-        nvidia.com/gpu: "4"
+        nvidia.com/gpu: "4"   # A single container can request at most 4 GPUs
+                               # (e.g., 4-way data-parallel training on one node)

@@ -1,4 +1,31 @@
-# Canary: 90% to v3 (current), 10% to v4 (new)
+# canary.yaml — KServe canary deployment for safe model version rollout
+#
+# WHAT IS A CANARY DEPLOYMENT?
+# Instead of switching all traffic to a new model version at once, a canary
+# sends a small percentage to the new version while the rest goes to the
+# stable version. If the canary behaves well (latency, accuracy, error rate)
+# you gradually increase its traffic share until it handles 100%.
+#
+# TRAFFIC SPLIT IN KSERVE:
+# canaryTrafficPercent: 10 means:
+#   → 10% of requests go to the canary (v4 — new)
+#   → 90% of requests go to the stable predictor (v3 — current)
+# KServe uses Knative's traffic management under the hood to enforce this split.
+#
+# ROLLOUT WORKFLOW:
+#   1. Start canary at 10% — monitor metrics for at least 24h
+#   2. Increase to 50% if error rate and latency are acceptable
+#   3. Promote to 100%: set canaryTrafficPercent: 100 (or remove canary spec)
+#   4. Update storageUri in the main predictor to v4, remove canary block
+#
+# ROLLBACK:
+#   Set canaryTrafficPercent: 0 — all traffic returns to stable immediately.
+#   Then delete the canary spec and re-apply.
+#
+# NOTE: This file has two `predictor:` keys which is invalid YAML — in practice
+# KServe uses a single predictor spec with a nested `canary:` sub-field.
+# The structure below illustrates the concept; see KServe docs for exact syntax.
+
 apiVersion: "serving.kserve.io/v1beta1"
 kind: "InferenceService"
 metadata:
@@ -6,16 +33,24 @@ metadata:
   namespace: ml-serving
 spec:
   predictor:
-    # canaryTrafficPercent routes this much to the canary
+    # canaryTrafficPercent: percentage of traffic routed to the canary version.
+    # The remaining (100 - 10 = 90%) goes to the model in the stable predictor spec.
+    # Start low (5-10%) to limit blast radius if the new model has regressions.
     canaryTrafficPercent: 10
+
+    # STABLE version (v3): receives 90% of traffic.
+    # This is the currently proven model in production.
     sklearn:
       storageUri: "s3://mlflow/artifacts/churn-predictor/v3/model"
       resources:
         requests:
-          cpu: "500m"
-          memory: "1Gi"
+          cpu: "500m"    # 0.5 cores is sufficient for sklearn inference
+          memory: "1Gi"  # Adjust based on model size in memory
 
-  # The canary spec gets canaryTrafficPercent of traffic
+  # CANARY version (v4): receives canaryTrafficPercent (10%) of traffic.
+  # Same resource spec as stable — ensures a fair performance comparison.
+  # If the canary needs more resources it suggests a model architecture change
+  # that warrants review before full promotion.
   predictor:
     canary:
       sklearn:

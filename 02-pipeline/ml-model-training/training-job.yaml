@@ -1,38 +1,96 @@
+# training-job.yaml — Kubernetes Job for a one-off ML model training run
+#
+# WHY USE A JOB INSTEAD OF A DEPLOYMENT?
+# Deployments keep pods running indefinitely (for services like web servers).
+# A Job runs pods until they complete successfully, then stops. Training is a
+# finite task: it finishes, logs results to MLflow, and exits. A Job is the
+# right abstraction — it also handles retries, parallelism, and auto-cleanup.
+#
+# JOB LIFECYCLE:
+#   1. kubectl apply → Job controller creates the pod
+#   2. Pod runs train.py, logs metrics to MLflow, writes model to S3
+#   3. Pod exits 0 → Job reports Complete
+#   4. ttlSecondsAfterFinished timer starts → Job and pod auto-deleted after 24h
+#
+# CREDENTIALS PATTERN:
+# Never hardcode AWS/MinIO credentials in the manifest. Use a Kubernetes Secret
+# ("minio-credentials") and reference it via secretKeyRef. The Secret is created
+# once by the Ansible playbook and reused across training runs.
+
 # k8s/training-job.yaml
 apiVersion: batch/v1
 kind: Job
 metadata:
+  # Include date in the name so each run creates a new Job object.
+  # If you re-apply with the same name and the old Job still exists, kubectl errors.
+  # In a CI/CD pipeline, substitute the commit SHA or pipeline run ID here.
   name: churn-model-training-20240115
   namespace: mlops
   labels:
     app: ml-training
-    model: churn-predictor
+    model: churn-predictor   # Useful for filtering: kubectl get jobs -l model=churn-predictor
 spec:
-  ttlSecondsAfterFinished: 86400 # clean up after 24h
+  # Auto-delete this Job (and its pods) 24h after it finishes.
+  # Keeps the namespace tidy without manual cleanup. Logs are in MLflow, not the pod.
+  ttlSecondsAfterFinished: 86400
+
+  # Retry budget: allow up to 2 retries if the pod fails.
+  # Set LOW for training jobs because failure is usually a code bug (wrong data path,
+  # missing dependency, OOM) that won't self-heal on retry. High backoffLimit wastes
+  # GPU hours retrying a broken training script.
+  # For data-loading or transient network errors, set higher (3-5).
   backoffLimit: 2
+
   template:
     spec:
+      # Never: don't restart the container in-place; create a fresh pod for each retry.
+      # This ensures each attempt starts from a clean state (no stale temp files,
+      # no corrupted in-progress MLflow run from the previous attempt).
       restartPolicy: Never
+
+      # serviceAccountName: the pod's Kubernetes identity.
+      # ml-training-sa must have an IAM role or RBAC binding that allows:
+      #   - Reading from S3 (data path)
+      #   - Writing to S3 (MLflow artifacts)
+      #   - Accessing the MLflow tracking server (if it uses network policies)
+      # Create with: kubectl create serviceaccount ml-training-sa -n mlops
       serviceAccountName: ml-training-sa
+
       containers:
         - name: trainer
+          # Pin to a specific image tag — never use "latest" in production.
+          # The image should contain your training code and all Python dependencies.
+          # Build and push it as part of your CI pipeline on each code change.
           image: your-registry/ml-trainer:v1.2.3
+
           command: ["python", "train.py"]
           args:
+            # s3://dvc/curated/ path is written by feature_engineering.ipynb.
+            # Version the dataset path so you can reproduce any training run exactly.
             - "--data-path=s3://dvc/curated/training_datasets/v20240115"
+            # In-cluster MLflow URL: use Kubernetes DNS (service.namespace.svc.cluster.local)
+            # This avoids external network hops and works even without public DNS.
             - "--mlflow-uri=http://mlflow.mlops.svc.cluster.local:5000"
             - "--experiment-name=churn-prediction"
             - "--model-name=churn-predictor"
+            # Hyperparameters below can be overridden per run; bake sensible defaults
+            # into train.py so the CLI args are optional for quick experiments.
             - "--n-estimators=300"
             - "--learning-rate=0.05"
+
           resources:
             requests:
-              cpu: "4"
-              memory: "16Gi"
+              cpu: "4"       # 4 cores for scikit-learn/XGBoost parallel fitting
+              memory: "16Gi" # Dataset (1,470 rows here) + model overhead
             limits:
-              cpu: "8"
-              memory: "32Gi"
+              cpu: "8"       # Allow bursting during parallel tree building
+              memory: "32Gi" # OOM kill threshold — set 2× requests as a safety buffer
+
           env:
+            # MinIO credentials for MLflow artifact storage and DVC data access.
+            # Stored in a Kubernetes Secret named "minio-credentials".
+            # Create: kubectl create secret generic minio-credentials \
+            #   --from-literal=access-key=<key> --from-literal=secret-key=<secret>
             - name: AWS_ACCESS_KEY_ID
               valueFrom:
                 secretKeyRef:
@@ -43,7 +101,17 @@ spec:
                 secretKeyRef:
                   name: minio-credentials
                   key: secret-key
+
+            # Point boto3/s3fs at the MinIO endpoint instead of AWS S3.
+            # MLflow uses boto3 internally for artifact storage, so this env var
+            # redirects all S3 API calls to self-hosted MinIO.
             - name: MLFLOW_S3_ENDPOINT_URL
               value: "https://s3.ops4life.com"
+
+      # nodeSelector: only schedule this pod on nodes labeled workload-type=ml-training.
+      # This label is applied by node-labels.sh. Without this, the pod could land
+      # on a small general node and run out of memory or run very slowly.
+      # For GPU training, use nodeAffinity (pod-affinity.yaml) instead of nodeSelector
+      # so you can also express GPU-type preferences.
       nodeSelector:
-        workload-type: ml-training # Schedule on dedicated ML nodes
+        workload-type: ml-training
