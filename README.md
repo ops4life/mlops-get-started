@@ -32,9 +32,9 @@ The pipeline notebooks use the [IBM HR Analytics Employee Attrition & Performanc
 
 | Tool | Online sandbox | Local |
 |------|---------------|-------|
-| Jupyter | https://sandbox.learnmlops.ops4life.com | http://localhost:8888 |
-| MLflow | https://mlflow.learnmlops.ops4life.com | http://localhost:5000 |
-| Airflow | https://airflow.learnmlops.ops4life.com | http://localhost:8080 |
+| Jupyter | https://notebook.ops4life.com | http://localhost:8888 |
+| MLflow | https://mlflow.ops4life.com | http://localhost:5000 |
+| Airflow | https://airflow.ops4life.com | http://localhost:8080 |
 
 ## Usage
 

@@ -10,9 +10,9 @@ The easiest way to get started. Everything is pre-installed and the starter note
 
 | Tool             | URL                                       |
 | ---------------- | ----------------------------------------- |
-| Jupyter Notebook | <https://sandbox.learnmlops.ops4life.com> |
-| MLflow UI        | <https://mlflow.learnmlops.ops4life.com>  |
-| Airflow UI       | <https://airflow.learnmlops.ops4life.com> |
+| Jupyter Notebook | <https://notebook.ops4life.com> |
+| MLflow UI        | <https://mlflow.ops4life.com>  |
+| Airflow UI       | <https://airflow.ops4life.com> |
 
 Open Jupyter, navigate to `starter/`, and run any notebook. MLflow and Airflow are already running and connected.
 

@@ -87,4 +87,4 @@ Notebooks include a Colab-compatible header that installs missing packages and s
 
 ## Deployment Context
 
-This repo lives inside the `learnmlops/` service of the parent VPS monorepo. The sandbox services (`sandbox.learnmlops.ops4life.com`, `mlflow.learnmlops.ops4life.com`, `airflow.learnmlops.ops4life.com`) are the production equivalents of the local Docker Compose setup. MinIO credentials are shared from `minio/.env` in the parent repo.
+This repo lives inside the `learnmlops/` service of the parent VPS monorepo. The sandbox services (`notebook.ops4life.com`, `mlflow.ops4life.com`, `airflow.ops4life.com`) are the production equivalents of the local Docker Compose setup. MinIO credentials are shared from `minio/.env` in the parent repo.
