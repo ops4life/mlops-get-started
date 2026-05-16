@@ -1,20 +1,18 @@
-# docker-compose.yml for MLflow in production
-version: "3.8"
+---
+version: '3.8'
 services:
   mlflow:
     image: ghcr.io/mlflow/mlflow:v2.10.0
     env_file: ../../.env
     ports:
-      - "5000:5000"
+      - 5000:5000
     environment:
       MLFLOW_BACKEND_STORE_URI: postgresql://mlflow:${DB_PASSWORD}@postgres:5432/mlflow
       MLFLOW_DEFAULT_ARTIFACT_ROOT: ${MLFLOW_DEFAULT_ARTIFACT_ROOT}
       MLFLOW_S3_ENDPOINT_URL: ${MLFLOW_S3_ENDPOINT_URL}
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
-    command: >
-      mlflow server
-        --host 0.0.0.0
-        --port 5000
-        --backend-store-uri postgresql://mlflow:${DB_PASSWORD}@postgres:5432/mlflow
-        --default-artifact-root ${MLFLOW_DEFAULT_ARTIFACT_ROOT}
+      TZ: ${TZ}
+    command: "mlflow server\n  --host 0.0.0.0\n  --port 5000\n  --backend-store-uri\
+      \ postgresql://mlflow:${DB_PASSWORD}@postgres:5432/mlflow\n  --default-artifact-root\
+      \ ${MLFLOW_DEFAULT_ARTIFACT_ROOT}\n"
