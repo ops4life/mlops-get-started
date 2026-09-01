@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="banner.svg" alt="mlops-get-started - Practical MLOps for DevOps Engineers" width="100%" />
+</p>
+
 # mlops-get-started
 
 Code snippets for [LearnMLOps](https://learnmlops.ops4life.com) guides — practical MLOps examples for DevOps engineers.
