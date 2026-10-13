@@ -2,7 +2,7 @@
 version: '3.8'
 services:
   mlflow:
-    image: ghcr.io/mlflow/mlflow:v2.10.0
+    image: ghcr.io/mlflow/mlflow:v3.17.0
     env_file: ../../.env
     ports:
       - 5000:5000
