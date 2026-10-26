@@ -1,0 +1,29 @@
+name: CI
+
+# Snippet repo: the *.sh files are copy-paste examples (not runnable scripts), so only the
+# YAML manifests are validated.
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  yaml:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Validate YAML syntax
+        run: |
+          pip install --quiet pyyaml
+          python - <<'PY'
+          import glob, sys, yaml
+          bad = 0
+          for path in sorted(glob.glob("**/*.y*ml", recursive=True)):
+              try:
+                  list(yaml.safe_load_all(open(path)))
+              except yaml.YAMLError as exc:
+                  print(f"{path}: {exc}")
+                  bad += 1
+          sys.exit(1 if bad else 0)
+          PY
